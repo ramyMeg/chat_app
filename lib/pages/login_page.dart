@@ -21,15 +21,18 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
-        if(state is LoginLoading){
-          isLoading =true;
-        }else if (state is LoginSuccess){
+        if (state is LoginLoading) {
+          isLoading = true;
+        } else if (state is LoginSuccess) {
           Navigator.pushNamed(context, ChatPage.id);
-        }else if (state is LoginFailure){
-          showSnackBar(context, 'Some thing went wrong');
+          isLoading = false;
+        } else if (state is LoginFailure) {
+          showSnackBar(context, state.errMessage);
+          isLoading = false;
+
         }
       },
-      child: ModalProgressHUD(
+      child:  ModalProgressHUD(
         inAsyncCall: isLoading,
         child: Scaffold(
           backgroundColor: kprimaryColor,
@@ -83,34 +86,9 @@ class LoginPage extends StatelessWidget {
                   CustomButton(
                     onTap: () async {
                       if (formKey.currentState!.validate()) {
-                        isLoading = true;
-
-                        try {
-                          await loginUser();
-                          Navigator.pushNamed(
-                            context,
-                            ChatPage.id,
-                            arguments: email,
-                          );
-                        } on FirebaseAuthException catch (e) {
-                          if (e.code == 'user-not-found') {
-                            showSnackBar(
-                              context,
-                              'No user found for that email.',
-                            );
-                          } else if (e.code == 'wrong-password') {
-                            showSnackBar(
-                              context,
-                              'Wrong password provided for that user.',
-                            );
-                          }
-                        } catch (e) {
-                          print(e);
-                          showSnackBar(context, 'There was an error');
-                        }
-                        isLoading = false;
-
-                        showSnackBar(context, 'Sucessful');
+                        BlocProvider.of<LoginCubit>(
+                          context,
+                        ).loginUser(email: email!, password: password!);
                       } else {}
                     },
                     text: 'LOGIN',
